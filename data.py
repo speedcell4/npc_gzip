@@ -1,15 +1,13 @@
 import csv
-import numpy as np
 import math
-import torch
 import os
-import unidecode
-from collections import defaultdict, OrderedDict
-from sklearn.datasets import fetch_20newsgroups
-
 from collections import defaultdict
-from torch.utils.data import DataLoader, Subset
+from collections import OrderedDict
+
+import numpy as np
+import unidecode
 from datasets import load_dataset
+from sklearn.datasets import fetch_20newsgroups
 
 
 class ToInt:
@@ -27,6 +25,7 @@ def read_fn_label(fn):
             text2label[text] = label
     return text2label
 
+
 def read_label(fn):
     labels = []
     with open(fn) as fo:
@@ -36,10 +35,12 @@ def read_label(fn):
             labels.append(label)
     return labels
 
+
 def read_fn_compress(fn):
     text = unidecode.unidecode(open(fn).read())
     text_list = text.strip().split('\n')
     return text_list
+
 
 def read_torch_text_labels(ds, indicies):
     text_list = []
@@ -50,6 +51,7 @@ def read_torch_text_labels(ds, indicies):
             label_list.append(label)
     return text_list, label_list
 
+
 def load_20news():
     def process(d):
         pairs = []
@@ -58,10 +60,12 @@ def load_20news():
             label = d.target[i]
             pairs.append((label, text))
         return pairs
+
     newsgroups_train = fetch_20newsgroups(subset='train')
     newsgroups_test = fetch_20newsgroups(subset='test')
     train_ds, test_ds = process(newsgroups_train), process(newsgroups_test)
     return train_ds, test_ds
+
 
 def load_ohsumed_single(di):
     def process(d):
@@ -73,10 +77,12 @@ def load_ohsumed_single(di):
                     text = open(os.path.join(d, dn, fn)).read().strip()
                     ds.append((label, text))
         return ds
+
     train_dir = os.path.join(di, 'training')
     test_dir = os.path.join(di, 'test')
     train_ds, test_ds = process(train_dir), process(test_dir)
     return train_ds, test_ds
+
 
 def load_ohsumed(di, split=0.9):
     train_ds = []
@@ -86,15 +92,16 @@ def load_ohsumed(di, split=0.9):
             label = dn
             texts = []
             num_file = len(list(os.listdir(os.path.join(di, dn))))
-            split_point = math.ceil(num_file*split)
+            split_point = math.ceil(num_file * split)
             for i, fn in enumerate(os.listdir(os.path.join(di, dn))):
                 text = open(os.path.join(di, dn, fn)).read().strip()
                 texts.append(text)
-                if i<split_point:
+                if i < split_point:
                     train_ds.append((label, text))
                 else:
                     test_ds.append((label, text))
     return train_ds, test_ds
+
 
 def load_r8(di, delimiter='\t'):
     def process(fn):
@@ -102,12 +109,14 @@ def load_r8(di, delimiter='\t'):
         text_list = open(fn).read().strip().split('\n')
         for t in text_list:
             label, text = t.split(delimiter)
-            l.append((label,text))
+            l.append((label, text))
         return l
+
     test_fn = os.path.join(di, 'test.txt')
     train_fn = os.path.join(di, 'train.txt')
     train_ds, test_ds = process(train_fn), process(test_fn)
     return train_ds, test_ds
+
 
 def load_trec(di):
     def process(fn):
@@ -116,12 +125,14 @@ def load_trec(di):
             reader = csv.reader(fo, delimiter=':')
             for row in reader:
                 label, text = row[0], row[1]
-                l.append((label,text))
+                l.append((label, text))
         return l
+
     test_fn = os.path.join(di, 'test.txt')
     train_fn = os.path.join(di, 'train.txt')
     train_ds, test_ds = process(train_fn), process(test_fn)
     return train_ds, test_ds
+
 
 def load_kinnews():
     def process(ds):
@@ -130,11 +141,13 @@ def load_kinnews():
             label = pair['label']
             title = pair['title']
             content = pair['content']
-            pairs.append((label, title+' '+content))
+            pairs.append((label, title + ' ' + content))
         return pairs
+
     ds = load_dataset("kinnews_kirnews", "kinnews_cleaned")
     train_ds, test_ds = process(ds['train']), process(ds['test'])
     return train_ds, test_ds
+
 
 def load_kirnews():
     def process(ds):
@@ -143,11 +156,13 @@ def load_kirnews():
             label = pair['label']
             title = pair['title']
             content = pair['content']
-            pairs.append((label, title+' '+content))
+            pairs.append((label, title + ' ' + content))
         return pairs
+
     ds = load_dataset("kinnews_kirnews", "kirnews_cleaned")
     train_ds, test_ds = process(ds['train']), process(ds['test'])
     return train_ds, test_ds
+
 
 def load_swahili():
     def process(ds):
@@ -157,15 +172,17 @@ def load_swahili():
             text = pair['text']
             pairs.append((label, text))
         return pairs
+
     ds = load_dataset('swahili_news')
     train_ds, test_ds = process(ds['train']), process(ds['test'])
     return train_ds, test_ds
+
 
 def load_filipino():
     def process(ds):
         label_dict = OrderedDict()
         d = {'absent': 0, 'dengue': 1, 'health': 2, 'mosquito': 3, 'sick': 4}
-        for k,v in d.items():
+        for k, v in d.items():
             label_dict[k] = v
         pairs = []
         for pair in ds:
@@ -175,9 +192,11 @@ def load_filipino():
                     label = label_dict[k]
             pairs.append((label, text))
         return pairs
+
     ds = load_dataset('dengue_filipino')
     train_ds, test_ds = process(ds['train']), process(ds['test'])
     return train_ds, test_ds
+
 
 def read_img_with_label(dataset, indicies, flatten=True):
     imgs = []
@@ -191,12 +210,14 @@ def read_img_with_label(dataset, indicies, flatten=True):
         labels.append(label)
     return np.array(imgs), np.array(labels)
 
+
 def read_img_label(dataset, indicies):
     labels = []
     for idx in indicies:
         label = dataset[idx][1]
         labels.append(label)
     return labels
+
 
 def pick_n_sample_from_each_class(fn, n, idx_only=False):
     label2text = defaultdict(list)
@@ -219,13 +240,14 @@ def pick_n_sample_from_each_class(fn, n, idx_only=False):
         select_text = np.array(label2text[c])[select_idx]
         select_text_idx = np.array(label2idx[c])[select_idx]
         recorded_idx += list(select_text_idx)
-        result+=list(select_text)
-        labels+=[c]*n
+        result += list(select_text)
+        labels += [c] * n
     print(len(result))
     if idx_only:
         return recorded_idx
     else:
         return result, labels
+
 
 def pick_n_sample_from_each_class_given_dataset(ds, n, output_fn, index_only=False):
     label2text = defaultdict(list)
@@ -243,9 +265,9 @@ def pick_n_sample_from_each_class_given_dataset(ds, n, output_fn, index_only=Fal
         select_idx = np.random.choice(class2count[c], size=n, replace=False)
         select_text = np.array(label2text[c])[select_idx]
         select_text_idx = np.array(label2idx[c])[select_idx]
-        recorded_idx+=list(select_text_idx)
-        result+=list(select_text)
-        labels+=[c]*n
+        recorded_idx += list(select_text_idx)
+        result += list(select_text)
+        labels += [c] * n
     print(len(result))
     if output_fn is not None:
         np.save(output_fn, np.array(recorded_idx))
@@ -260,8 +282,8 @@ def pick_n_sample_from_each_class_img(dataset, n, prefix='train', flatten=False)
     class2count = {}
     result = []
     labels = []
-    recorded_idx = [] #for replication
-    for i,pair in enumerate(dataset):
+    recorded_idx = []  # for replication
+    for i, pair in enumerate(dataset):
         img, label = pair
         if flatten:
             img = np.array(img).flatten()
@@ -273,10 +295,9 @@ def pick_n_sample_from_each_class_img(dataset, n, prefix='train', flatten=False)
         select_idx = np.random.choice(class2count[c], size=n, replace=False)
         select_img = np.array(label2img[c])[select_idx]
         select_img_idx = np.array(label2idx[c])[select_idx]
-        recorded_idx+=list(select_img_idx)
-        result+=list(select_img)
-        labels+=[c]*n
+        recorded_idx += list(select_img_idx)
+        result += list(select_img)
+        labels += [c] * n
     print(len(result))
     print(recorded_idx)
     return result, labels, recorded_idx
-

@@ -1,18 +1,10 @@
 # Experiment framework
-import os
-import torch
-import numpy as np
-import statistics
 import operator
-from collections import Counter, defaultdict
-from tqdm import tqdm
 import random
-from functools import partial
-from itertools import repeat
-from copy import deepcopy
-from statistics import mode
-import pickle
-from sklearn.metrics.cluster import adjusted_rand_score, normalized_mutual_info_score
+from collections import defaultdict
+
+import numpy as np
+from tqdm import tqdm
 
 
 class KnnExpText:
@@ -36,7 +28,7 @@ class KnnExpText:
             for j, t2 in enumerate(data_to_compare):
                 if fast:
                     t2_compressed = self.compressor.get_compressed_len_fast(t2)
-                    t1t2_compressed = self.compressor.get_compressed_len_fast(self.aggregation_func(t1,t2))
+                    t1t2_compressed = self.compressor.get_compressed_len_fast(self.aggregation_func(t1, t2))
                 else:
                     t2_compressed = self.compressor.get_compressed_len(t2)
                     t1t2_compressed = self.compressor.get_compressed_len(self.aggregation_func(t1, t2))
@@ -65,6 +57,7 @@ class KnnExpText:
         t1t2_compressed = self.compressor.get_compressed_len(self.aggregation_func(t1, t2))
         distance = self.distance_func(t1_compressed, t2_compressed, t1t2_compressed)
         return distance
+
     def calc_dis_single_multi(self, train_data, datum):
         distance4i = []
         t1_compressed = self.compressor.get_compressed_len(datum)
@@ -74,6 +67,7 @@ class KnnExpText:
             distance = self.distance_func(t1_compressed, t2_compressed, t1t2_compressed)
             distance4i.append(distance)
         return distance4i
+
     def calc_dis_with_vector(self, data, train_data=None):
         if train_data is not None:
             data_to_compare = train_data
@@ -85,6 +79,7 @@ class KnnExpText:
                 distance = self.distance_func(t1, t2)
                 distance4i.append(distance)
             self.dis_matrix.append(distance4i)
+
     def calc_acc(self, k, label, train_label=None, provided_distance_matrix=None, rand=False):
         if provided_distance_matrix is not None:
             self.dis_matrix = provided_distance_matrix
@@ -97,7 +92,7 @@ class KnnExpText:
         else:
             compare_label = label
             start = 1
-            end = k+1
+            end = k + 1
         for i in range(len(self.dis_matrix)):
             sorted_idx = np.argsort(np.array(self.dis_matrix[i]))
             pred_labels = defaultdict(int)
@@ -120,11 +115,12 @@ class KnnExpText:
                     most_voted_labels.append(pair[0])
             if rand:
                 most_label = random.choice(most_voted_labels)
-                if_right = 1 if most_label==label[i] else 0
+                if_right = 1 if most_label == label[i] else 0
             pred.append(most_label)
             correct.append(if_right)
-        print("Accuracy is {}".format(sum(correct)/len(correct)))
+        print("Accuracy is {}".format(sum(correct) / len(correct)))
         return pred, correct
+
     def combine_dis_acc(self, k, data, label, train_data=None, train_label=None):
         correct = []
         pred = []
@@ -135,7 +131,7 @@ class KnnExpText:
         else:
             compare_label = label
             start = 1
-            end = k+1
+            end = k + 1
         if train_data is not None:
             data_to_compare = train_data
         else:
@@ -180,8 +176,6 @@ class KnnExpText:
             if pair[0] == label:
                 if_right = 1
                 most_label = pair[0]
-        pred=most_label
-        correct=if_right
+        pred = most_label
+        correct = if_right
         return pred, correct
-
-
