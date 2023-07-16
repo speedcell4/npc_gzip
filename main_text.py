@@ -1,11 +1,13 @@
 import argparse
-from data import *
+import time
+from functools import partial
+
+from pathos.multiprocessing import ProcessingPool as Pool
+
 from compressors import *
+from data import *
 from experiments import *
 from utils import *
-from functools import partial
-from pathos.multiprocessing import ProcessingPool as Pool
-import time
 
 
 # np.random.seed(6)
@@ -13,15 +15,14 @@ import time
 def non_neural_knn_exp(compressor_name, test_data, test_label, train_data, train_label, agg_func, dis_func, k,
                        para=True):
     print(f"KNN with compressor={compressor_name}")
-    cp = DefaultCompressor(compressor_name)
-    knn_exp_ins = KnnExpText(agg_func, cp, dis_func)
+    cp = DefaultCompressor(compressor=compressor_name)
+    knn_exp_ins = KnnExpText(agg_f=agg_func, comp=cp, dis=dis_func)
     start = time.time()
     if para:
         with Pool(5) as p:
             pred_correct_pair = p.map(partial(knn_exp_ins.combine_dis_acc_single, k, train_data, train_label),
                                       test_data, test_label)
         print(f'accuracy:{np.average(np.array(pred_correct_pair, dtype=np.int32)[:, 1])}')
-        # print(f'accuracy:{np.average(np.array(pred_correct_pair, dtype=np.object_)[:, 1])}')
     else:
         knn_exp_ins.calc_dis(test_data, train_data=train_data)
         knn_exp_ins.calc_acc(k, test_label, train_label=train_label)
@@ -126,16 +127,29 @@ if __name__ == '__main__':
     if not args.all_train:
         if args.test_idx_fn is not None or args.test_idx_start is not None:
             train_idx = np.load(train_idx_fn + '.npy')
-            train_data, train_labels = read_torch_text_labels(dataset_pair[0], train_idx)
+            train_data, train_labels = read_torch_text_labels(
+                dataset_pair[0], train_idx,
+            )
         else:
-            train_data, train_labels = pick_n_sample_from_each_class_given_dataset(dataset_pair[0], args.num_train,
-                                                                                   train_idx_fn)
+            train_data, train_labels = pick_n_sample_from_each_class_given_dataset(
+                dataset_pair[0], args.num_train, train_idx_fn,
+            )
     else:
         train_pair, test_pair = dataset_pair[0], dataset_pair[1]
         train_data, train_labels = read_torch_text_labels(train_pair, range(len(train_pair)))
+
     if not args.record:
-        non_neural_knn_exp(args.compressor, test_data, test_labels, train_data, train_labels, agg_by_concat_space, NCD,
-                           args.k, para=args.para)
+        non_neural_knn_exp(
+            compressor_name=args.compressor,
+            test_data=test_data,
+            test_label=test_labels,
+            train_data=train_data,
+            train_label=train_labels,
+            agg_func=agg_by_concat_space,
+            dis_func=NCD,
+            k=args.k,
+            para=args.para,
+        )
     else:
         if args.test_idx_fn is None:
             output_rel_fn = f'test_dis_idx_from_{args.test_idx_start}_to_{args.test_idx_end}'

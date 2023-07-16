@@ -19,6 +19,7 @@ class KnnExpText:
             data_to_compare = train_data
         else:
             data_to_compare = data
+
         for i, t1 in tqdm(enumerate(data)):
             distance4i = []
             if fast:
@@ -118,7 +119,7 @@ class KnnExpText:
                 if_right = 1 if most_label == label[i] else 0
             pred.append(most_label)
             correct.append(if_right)
-        print("Accuracy is {}".format(sum(correct) / len(correct)))
+        print(f"Accuracy is {sum(correct) / len(correct)}")
         return pred, correct
 
     def combine_dis_acc(self, k, data, label, train_data=None, train_label=None):
@@ -155,7 +156,7 @@ class KnnExpText:
                     most_label = pair[0]
             pred.append(most_label)
             correct.append(if_right)
-        print("Accuracy is {}".format(sum(correct) / len(correct)))
+        print(f"Accuracy is {sum(correct) / len(correct)}")
         return pred, correct
 
     def combine_dis_acc_single(self, k, train_data, train_label, datum, label):
